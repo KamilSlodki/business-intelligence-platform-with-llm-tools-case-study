@@ -2,7 +2,7 @@
 
 flowchart TB
     subgraph actors["Actors"]
-        STAKE["Business Stakeholder<br/>(non-technical · pregunta<br/>via mensajeria instantanea)"]
+        STAKE["Business Stakeholder<br/>(non-technical · pregunta<br/>via WhatsApp)"]
         ANALYST["Data Analyst<br/>(consume dashboards<br/>drill-down operacional)"]
         EXEC["Executive<br/>(KPI overview<br/>dashboards ejecutivos)"]
     end
@@ -13,7 +13,7 @@ flowchart TB
     end
 
     subgraph ext["External Systems"]
-        WA["Mensajeria instantanea BSP<br/>(self-hosted)"]
+        WA["WhatsApp BSP<br/>(self-hosted)"]
         LLM["LLM API<br/>commercial-grade tiered"]
         DB[("Postgres warehouse<br/>multi-fuente unificada<br/>user read-only por subsistema")]
         ETL["ETL daily batch<br/>3 plataformas upstream"]
@@ -46,6 +46,6 @@ flowchart TB
 
 %% Notes
 %% Dos subsistemas aislados del mismo cliente:
-%% Bot conversacional con tools tipadas via mensajeria instantanea.
+%% Bot conversacional con tools tipadas via WhatsApp.
 %% Dashboard analytics con visualizaciones interactivas.
 %% BD compartida pero con users Postgres separados por subsistema.

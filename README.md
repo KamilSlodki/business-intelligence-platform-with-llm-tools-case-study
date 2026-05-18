@@ -2,7 +2,7 @@
 
 **Engineered by [Kamil Slodki](https://www.linkedin.com/in/kamilslodki/)** · Valencia, España · Remote-first
 
-**Plataforma de business intelligence multi-fuente para operador B2B con consumo dual de datos: (1) **dashboard analytics interactivo** sobre warehouse operativo unificado con visualizaciones drill-down + KPIs cross-source + filtros multi-dimensión + masking de PII inline + auditoría append-only de queries; (2) **agente conversacional LLM con tools tipadas vía mensajería instantánea** que permite a stakeholders no técnicos preguntar a la BD en lenguaje natural ("quién facturó más este mes" · "qué unidades operativas registraron menos actividad" · "datos de cliente X") con catálogo cerrado de tools Pydantic schema-validated, BD aislada read-only con statement timeout, anti-hallucination via tool dedicada para agregados, y fallback gracioso entre modelos LLM por tier de coste. Stack: FastAPI 0.115 + SQLAlchemy 2.0 + Alembic + Pydantic v2 + Postgres 15 + Next.js 15 + TypeScript strict + Tailwind + shadcn/ui + Apache ECharts + AG Grid + MapLibre + commercial-grade LLM (catálogo cerrado, sin SQL libre) + low-code workflow orchestrator self-hosted para mensajería instantánea + audit log append-only con triggers. Disciplina institucional: 11 ADRs versionadas + threat model con vectores reales identificados + 6 docs de seguridad (POLICY · PII · SECRETS · RETENTION · BREACH · THREAT_MODEL) + Stage-Gate Pre-dev/Post-dev protocol + tests de regresión SQL semántica contra schema dumped en CI + masking PII en logs y queries + autorización app-level con allowlist + statement_timeout 5-10s para proteger BD productiva + pool size acotado + workflows aislados en stacks Docker separados.**
+**Plataforma de business intelligence multi-fuente para operador B2B con consumo dual de datos: (1) **dashboard analytics interactivo** sobre warehouse operativo unificado con visualizaciones drill-down + KPIs cross-source + filtros multi-dimensión + masking de PII inline + auditoría append-only de queries; (2) **agente conversacional LLM con tools tipadas vía WhatsApp** que permite a stakeholders no técnicos preguntar a la BD en lenguaje natural ("quién facturó más este mes" · "qué unidades operativas registraron menos actividad" · "datos de cliente X") con catálogo cerrado de tools Pydantic schema-validated, BD aislada read-only con statement timeout, anti-hallucination via tool dedicada para agregados, y fallback gracioso entre modelos LLM por tier de coste. Stack: FastAPI 0.115 + SQLAlchemy 2.0 + Alembic + Pydantic v2 + Postgres 15 + Next.js 15 + TypeScript strict + Tailwind + shadcn/ui + Apache ECharts + AG Grid + MapLibre + commercial-grade LLM (catálogo cerrado, sin SQL libre) + low-code workflow orchestrator self-hosted para mensajería instantánea + audit log append-only con triggers. Disciplina institucional: 11 ADRs versionadas + threat model con vectores reales identificados + 6 docs de seguridad (POLICY · PII · SECRETS · RETENTION · BREACH · THREAT_MODEL) + Stage-Gate Pre-dev/Post-dev protocol + tests de regresión SQL semántica contra schema dumped en CI + masking PII en logs y queries + autorización app-level con allowlist + statement_timeout 5-10s para proteger BD productiva + pool size acotado + workflows aislados en stacks Docker separados.**
 
 [![Type](https://img.shields.io/badge/type-case%20study%20%C2%B7%20anonymized-blue.svg)](#sobre-este-case-study)
 [![Status](https://img.shields.io/badge/status-LLM%20agent%20en%20producci%C3%B3n%20%C2%B7%20dashboard%20MVP%20activo-success.svg)](#estado)
@@ -34,7 +34,7 @@
 Este repositorio describe una **plataforma de business intelligence multi-fuente con dos consumidores de datos** entregada a un operador B2B con BD operativa unificada de múltiples fuentes:
 
 1. **Dashboard analytics interactivo** — visualizaciones drill-down sobre warehouse operativo, 4 dashboards con KPIs cross-source, filtros multi-dimensión, masking PII inline, auditoría append-only de queries.
-2. **Agente conversacional LLM con tools tipadas vía mensajería instantánea** — permite a stakeholders no técnicos consultar la BD en lenguaje natural con catálogo cerrado de 13 tools Pydantic-validated.
+2. **Agente conversacional LLM con tools tipadas vía WhatsApp** — permite a stakeholders no técnicos consultar la BD en lenguaje natural con catálogo cerrado de 13 tools Pydantic-validated.
 
 Ambos subsistemas comparten la misma BD operativa pero están **completamente aislados** (código, containers, users Postgres distintos). Diseñados como **plataforma BI institucional** vs solución ad-hoc, con disciplina de delivery (11 ADRs, threat model, Stage-Gate protocol, regresión SQL en CI, masking PII enforced en logs y queries).
 
@@ -48,7 +48,7 @@ Ambos subsistemas comparten la misma BD operativa pero están **completamente ai
 
 ## El problema
 
-El cliente operaba con datos dispersos en múltiples fuentes heterogéneas (plataforma operativa externa, servicios privados B2B internos, hojas de planificación, agregaciones manuales) sin consumo unificado. Los stakeholders no técnicos (operaciones · comercial · dirección) dependían de Jaime (propietario de datos upstream) para responder preguntas básicas tipo "¿quién facturó más este mes?" o "¿quién registró menos actividad?" via solicitudes ad-hoc por mensajería instantánea. Time to insight: horas a días. Antipatrones sistémicos al automatizar este consumo:
+El cliente operaba con datos dispersos en múltiples fuentes heterogéneas (plataforma operativa externa, servicios privados B2B internos, hojas de planificación, agregaciones manuales) sin consumo unificado. Los stakeholders no técnicos (operaciones · comercial · dirección) dependían de Jaime (propietario de datos upstream) para responder preguntas básicas tipo "¿quién facturó más este mes?" o "¿quién registró menos actividad?" via solicitudes ad-hoc por WhatsApp. Time to insight: horas a días. Antipatrones sistémicos al automatizar este consumo:
 
 | Antipatrón sistémico de la industria | Patrón aplicado en este proyecto |
 |---|---|
@@ -78,7 +78,7 @@ Sistema en **2 subsistemas aislados** que comparten BD operativa pero NO código
 
 ### Subsistema 2 — LLM Agent conversacional
 
-- **Orquestación**: low-code workflow engine self-hosted que recibe mensajes de messaging BSP self-hosted, transcripción audio integrada, allowlist por número, memory persistente por sesión.
+- **Orquestación**: low-code workflow engine self-hosted que recibe mensajes de WhatsApp BSP self-hosted, transcripción audio integrada, allowlist por número, memory persistente por sesión.
 - **Plano de datos**: FastAPI con 13 tools Pydantic schema-validated · cada tool: input schema → SQL parametrizado predefinido → output schema → PII masking → cap 32 KB.
 - **Modelo LLM**: commercial-grade económico (tier económico) como default · fallback a modelo medio si confidence baja · modelo premium reservado por confidence threshold · sin SQL libre permitido.
 - **BD aislada**: user `bot_subsystem_readonly` con SELECT acotado a `dim_*`/`fact_*` · EXECUTE revoke en funciones peligrosas · `statement_timeout=5s` · pool size 5 · schema separado para tablas del bot (no toca producción).
@@ -105,12 +105,12 @@ flowchart TB
     end
 
     subgraph platform["Business Intelligence Platform"]
-        BOT["LLM Agent Subsystem<br/>(tools tipadas + messaging instantáneo)"]
+        BOT["LLM Agent Subsystem<br/>(tools tipadas + WhatsApp)"]
         DASH["Dashboard Subsystem<br/>(visualizaciones interactivas)"]
     end
 
     subgraph ext["External Systems"]
-        WA["Mensajería instantánea BSP<br/>(self-hosted)"]
+        WA["WhatsApp BSP<br/>(self-hosted)"]
         LLM["LLM API<br/>(commercial-grade · tiered)"]
         DB[("Postgres warehouse<br/>multi-fuente unificada<br/>+ user read-only por subsistema")]
         ETL["ETL daily batch<br/>(3 plataformas upstream)"]
@@ -186,7 +186,7 @@ flowchart TB
     end
 
     subgraph external["External Systems"]
-        EXT_WA["messaging instantáneo BSP<br/>self-hosted"]
+        EXT_WA["WhatsApp BSP<br/>self-hosted"]
         EXT_LLM["LLM API"]
         EXT_AUDIO["Audio service"]
         EXT_SOURCES["3 plataformas externas<br/>+ 2 fuentes internas"]
@@ -253,7 +253,7 @@ flowchart TB
 | **LLM core** | Commercial-grade LLM (tier económico default · fallback tier medio) | Decisión qué tool invocar · NO genera SQL libre |
 | **Tool schemas** | Pydantic BaseModel input + BaseModel output | Validación entrada y salida en cada tool call |
 | **Audio transcription** | Servicio dedicado (orchestrator nativo) | Mensajes de voz → texto antes de pasar al LLM |
-| **Mensajería instantánea** | messaging BSP self-hosted | Canal conversacional con usuarios finales |
+| **Mensajería instantánea** | WhatsApp BSP self-hosted | Canal conversacional con usuarios finales |
 | **Workflow orchestration** | Low-code workflow engine self-hosted | Allowlist · audio · memory por sesión · dispatch HTTP |
 | **Dashboard Fase 1** | BI tool OSS embedded | MVP de visualización con drill-path |
 | **Dashboard Fase 2** | Next.js 15 + TypeScript strict + Tailwind + shadcn/ui | Frontend custom premium con semantic layer |
@@ -279,7 +279,7 @@ flowchart TB
 ```mermaid
 sequenceDiagram
     actor U as Business Stakeholder
-    participant WA as messaging instantáneo BSP
+    participant WA as WhatsApp BSP
     participant ORCH as Workflow Orchestrator
     participant ALW as Allowlist
     participant AUDIO as Audio Transcription
