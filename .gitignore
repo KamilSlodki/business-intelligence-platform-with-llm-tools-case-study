@@ -1,0 +1,65 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Build artifacts
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+dist/
+build/
+.next/
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials*
+secrets*
+
+# Internal documentation typically containing client identity
+**/briefings/
+**/runbooks/
+**/entregables/
+**/_internal/
+**/STATUS.md
+**/PROGRESS.md
+**/CLAUDE.md
+**/BACKLOG.md
+**/CHANGELOG.md
+**/contexto*.txt
+**/current_systemmessage.txt
+**/exec.json
+**/edit_summary.txt
+**/error_dump.txt
+**/infra/schema_dumps/
+
+# Client data
+*.csv
+*.xlsx
+*.docx
+*.pdf
+backups-local/
+
+# Test artifacts
+playwright-report/
+test-results/
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Migrations
+alembic/versions/
+
+# Explicitly allow synthetic case-study diagrams
+!assets/diagrams/c4-*.mmd

@@ -1,0 +1,106 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#2962FF', 'secondaryColor': '#00C853', 'tertiaryColor': '#FF6D00'}}}%%
+
+flowchart TB
+    subgraph bot_subsystem["LLM Agent Subsystem (isolated stack)"]
+        ORCH["Orchestrator<br/>low-code workflow engine self-hosted"]
+        ALLOWLIST["Phone Allowlist<br/>defense in depth"]
+        AUDIO["Audio Transcription service"]
+        LLM_DECIDE["LLM Decide Tool<br/>commercial-grade tiered"]
+        TOOL_DISPATCH["Tool Dispatcher<br/>FastAPI POST tools-name"]
+        TOOL_TOP_N["Tool top_N by metric"]
+        TOOL_AGGR["Tool aggregate totals<br/>anti-hallucination"]
+        TOOL_CLIENT["Tool client filter"]
+        TOOL_SCHED["Tool schedule variance"]
+        TOOL_FRESH["Tool data freshness"]
+        TOOL_MORE["+ 8 tools mas<br/>13 total"]
+        SCHEMA_VAL["Schema Validator<br/>Pydantic input + output"]
+        PII_MASK_BOT["PII Masking<br/>names · email · phone"]
+        AUDIT_BOT[("bot_interactions<br/>append-only audit")]
+    end
+
+    subgraph dashboard_subsystem["Dashboard Subsystem (isolated stack)"]
+        MB["BI tool OSS<br/>Fase 1 MVP"]
+        NEXT["Next.js 15 frontend<br/>Fase 2 propuesta"]
+        FASTAPI_DASH["FastAPI semantic layer<br/>Fase 2"]
+        AUTH_APP["user_roles table<br/>app-level RLS"]
+        DASH_VIEWS[("Vistas v_dashboard_*<br/>masking inline")]
+        AGGR_MV[("Materialized views<br/>top-N · monthly · recon")]
+        QUERY_LOG[("query_log<br/>append-only trigger")]
+    end
+
+    subgraph shared_db["Shared Warehouse (isolated DB users)"]
+        DIM[("dim_* tables<br/>canonical entities")]
+        FACT[("fact_* tables<br/>transactional grain")]
+        MAP[("map_* tables<br/>cross-source identity")]
+        ALERTS[("rules_alerts<br/>business rules fired")]
+    end
+
+    subgraph etl["ETL Upstream (daily batch)"]
+        ETL_RUN["Daily ETL run<br/>nightly"]
+        RAW[("raw_* tables<br/>staging")]
+    end
+
+    subgraph external["External Systems"]
+        EXT_WA["messaging instantáneo BSP<br/>self-hosted"]
+        EXT_LLM["LLM API"]
+        EXT_AUDIO["Audio service"]
+        EXT_SOURCES["3 plataformas externas<br/>+ 2 fuentes internas"]
+    end
+
+    EXT_WA --> ORCH
+    ORCH --> ALLOWLIST
+    ALLOWLIST --> AUDIO
+    AUDIO <--> EXT_AUDIO
+    ORCH --> LLM_DECIDE
+    LLM_DECIDE <--> EXT_LLM
+    LLM_DECIDE --> TOOL_DISPATCH
+    TOOL_DISPATCH --> TOOL_TOP_N
+    TOOL_DISPATCH --> TOOL_AGGR
+    TOOL_DISPATCH --> TOOL_CLIENT
+    TOOL_DISPATCH --> TOOL_SCHED
+    TOOL_DISPATCH --> TOOL_FRESH
+    TOOL_DISPATCH --> TOOL_MORE
+    TOOL_TOP_N --> SCHEMA_VAL
+    TOOL_AGGR --> SCHEMA_VAL
+    SCHEMA_VAL --> PII_MASK_BOT
+    PII_MASK_BOT --> AUDIT_BOT
+
+    TOOL_DISPATCH <-->|user bot_subsystem_readonly<br/>statement_timeout 5s| DIM
+    TOOL_DISPATCH <-->|user bot_subsystem_readonly| FACT
+
+    MB <--> DASH_VIEWS
+    NEXT --> FASTAPI_DASH
+    FASTAPI_DASH --> AUTH_APP
+    FASTAPI_DASH --> DASH_VIEWS
+    FASTAPI_DASH --> AGGR_MV
+    DASH_VIEWS --> DIM
+    DASH_VIEWS --> FACT
+    AGGR_MV --> FACT
+    FASTAPI_DASH --> QUERY_LOG
+
+    EXT_SOURCES --> ETL_RUN
+    ETL_RUN --> RAW
+    RAW --> DIM
+    RAW --> FACT
+    RAW --> MAP
+    FACT --> ALERTS
+
+    classDef bot fill:#FF6D00,stroke:#FF9100,color:white
+    classDef dash fill:#2962FF,stroke:#1E88E5,color:white
+    classDef db fill:#388E3C,stroke:#1B5E20,color:white
+    classDef etl fill:#7C4DFF,stroke:#651FFF,color:white
+    classDef external fill:#757575,stroke:#9E9E9E,color:white
+
+    class ORCH,ALLOWLIST,AUDIO,LLM_DECIDE,TOOL_DISPATCH,TOOL_TOP_N,TOOL_AGGR,TOOL_CLIENT,TOOL_SCHED,TOOL_FRESH,TOOL_MORE,SCHEMA_VAL,PII_MASK_BOT,AUDIT_BOT bot
+    class MB,NEXT,FASTAPI_DASH,AUTH_APP,DASH_VIEWS,AGGR_MV,QUERY_LOG dash
+    class DIM,FACT,MAP,ALERTS db
+    class ETL_RUN,RAW etl
+    class EXT_WA,EXT_LLM,EXT_AUDIO,EXT_SOURCES external
+
+%% Notes
+%% 2 subsistemas con aislamiento absoluto: codigo + BD users + containers
+%% + secrets + deploy independientes. BD compartida con users distintos.
+%% Bot: workflow orchestrator + LLM decide + FastAPI tool dispatcher con
+%% 13 tools tipadas Pydantic + schema validator + PII masking + audit log.
+%% Dashboard: BI tool MVP + Next.js Fase 2 + FastAPI semantic layer
+%% + app-level authorization + vistas con masking + materialized views.

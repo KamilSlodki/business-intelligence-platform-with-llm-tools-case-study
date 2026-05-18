@@ -1,0 +1,51 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'primaryColor': '#2962FF', 'secondaryColor': '#00C853', 'tertiaryColor': '#FF6D00'}}}%%
+
+flowchart TB
+    subgraph actors["Actors"]
+        STAKE["Business Stakeholder<br/>(non-technical · pregunta<br/>via mensajeria instantanea)"]
+        ANALYST["Data Analyst<br/>(consume dashboards<br/>drill-down operacional)"]
+        EXEC["Executive<br/>(KPI overview<br/>dashboards ejecutivos)"]
+    end
+
+    subgraph platform["Business Intelligence Platform"]
+        BOT["LLM Agent Subsystem<br/>(tools tipadas + mensajeria)"]
+        DASH["Dashboard Subsystem<br/>(visualizaciones interactivas)"]
+    end
+
+    subgraph ext["External Systems"]
+        WA["Mensajeria instantanea BSP<br/>(self-hosted)"]
+        LLM["LLM API<br/>commercial-grade tiered"]
+        DB[("Postgres warehouse<br/>multi-fuente unificada<br/>user read-only por subsistema")]
+        ETL["ETL daily batch<br/>3 plataformas upstream"]
+        MON["Monitoring<br/>APM commercial + Postgres metrics"]
+    end
+
+    STAKE -->|pregunta en lenguaje natural<br/>texto · audio| WA
+    WA -->|webhook real-time| BOT
+    ANALYST -->|drill-path entity-driven| DASH
+    EXEC -->|KPI overview| DASH
+
+    BOT <-->|invoke tool typed| LLM
+    BOT <-->|SELECT scoped<br/>statement_timeout 5s| DB
+    DASH <-->|SELECT scoped<br/>masking PII inline| DB
+
+    ETL -->|nightly load<br/>raw to dim and fact| DB
+    BOT -->|audit log append-only| DB
+    DASH -->|query log append-only| DB
+
+    BOT -.->|exceptions| MON
+    DASH -.->|exceptions| MON
+
+    classDef actor fill:#7C4DFF,stroke:#651FFF,color:white
+    classDef platform fill:#2962FF,stroke:#1E88E5,color:white
+    classDef external fill:#757575,stroke:#9E9E9E,color:white
+
+    class STAKE,ANALYST,EXEC actor
+    class BOT,DASH platform
+    class WA,LLM,DB,ETL,MON external
+
+%% Notes
+%% Dos subsistemas aislados del mismo cliente:
+%% Bot conversacional con tools tipadas via mensajeria instantanea.
+%% Dashboard analytics con visualizaciones interactivas.
+%% BD compartida pero con users Postgres separados por subsistema.
